@@ -1,51 +1,95 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Generador de Riffs en Octavas</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Riffs en Octavas</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background: #111;
       color: #eee;
       padding: 2rem;
       max-width: 600px;
       margin: auto;
     }
-    select, button {
+    select {
       font-size: 1rem;
       padding: 0.5rem;
-      margin: 0.5rem 0;
       width: 100%;
+      border-radius: 5px;
+      margin-bottom: 0.5rem;
+      border: none;
+    }
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    button {
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #ff6600;
+      color: white;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      height: 100%;
     }
     .result {
       background: #222;
       padding: 1rem;
-      border-radius: 5px;
+      border-radius: 6px;
       margin-top: 1rem;
       white-space: pre-wrap;
+    }
+    .footer {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      text-align: center;
+      color: #888;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
   <h1>🎸 Generador de Riffs en Octavas</h1>
-  <label for="tonalidad">Elige una tonalidad:</label>
+
+  <label for="tonalidad">Tonalidad:</label>
   <select id="tonalidad">
     <option>C</option><option>C#</option><option>D</option><option>D#</option>
     <option>E</option><option>F</option><option>F#</option><option>G</option>
     <option>G#</option><option>A</option><option>A#</option><option>B</option>
   </select>
 
-  <label for="modo">Elige un modo:</label>
-  <select id="modo">
-    <option value="mayor">Mayor</option>
-    <option value="menor">Menor</option>
-    <option value="pentatonica">Pentatónica</option>
-  </select>
+  <label for="modo">Modo:</label>
+  <div class="input-row">
+    <select id="modo" style="flex: 1;" onchange="togglePentatonicaTipo()">
+      <option value="mayor">Mayor</option>
+      <option value="menor">Menor</option>
+      <option value="pentatonica">Pentatónica</option>
+      <option value="aumentada">Aumentada</option>
+      <option value="disminuida">Disminuida</option>
+      <option value="mayorb5">Mayor♭5</option>
+    </select>
+    <button onclick="generar()">Go!</button>
+  </div>
 
-  <button onclick="generar()">Generar Riff</button>
+  <div id="pentatonica-tipo-container" class="hidden">
+    <label for="pentatipo">Tipo de pentatónica:</label>
+    <select id="pentatipo">
+      <option value="pentatonica_mayor">Mayor</option>
+      <option value="pentatonica_menor">Menor</option>
+    </select>
+  </div>
 
   <div class="result" id="resultado"></div>
+
+  <div class="footer">Desarrollado por Pablo Gallegos Arancibia</div>
 
   <script>
     const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -53,8 +97,18 @@
     const intervals = {
       mayor:       [2, 2, 1, 2, 2, 2, 1],
       menor:       [2, 1, 2, 2, 1, 2, 2],
-      pentatonica: [2, 2, 3, 2, 3],
+      aumentada:   [2, 2, 2, 2, 2, 2],
+      disminuida:  [2, 1, 2, 1, 2, 1, 2, 1],
+      mayorb5:     [2, 2, 1, 2, 1, 3, 1],
+      pentatonica_mayor: [2, 2, 3, 2, 3],
+      pentatonica_menor: [3, 2, 2, 3, 2]
     };
+
+    function togglePentatonicaTipo() {
+      const modo = document.getElementById('modo').value;
+      const pentatipoContainer = document.getElementById('pentatonica-tipo-container');
+      pentatipoContainer.classList.toggle('hidden', modo !== 'pentatonica');
+    }
 
     function buildScale(root, mode) {
       let idx = chromatic.indexOf(root);
@@ -82,13 +136,17 @@
     }
 
     function suggestOctaveRiff(validFrets) {
-      const range = validFrets.filter(f => f >= 5 && f <= 15);
-      return range.slice(0, 4);
+      return validFrets.filter(f => f >= 5 && f <= 15).slice(0, 4);
     }
 
     function generar() {
       const root = document.getElementById('tonalidad').value;
-      const mode = document.getElementById('modo').value;
+      let mode = document.getElementById('modo').value;
+
+      if (mode === 'pentatonica') {
+        const tipo = document.getElementById('pentatipo').value;
+        mode = tipo; // pentatonica_mayor o pentatonica_menor
+      }
 
       const scale = buildScale(root, mode);
       const frets5 = getValidFrets(scale, 'A');
@@ -96,7 +154,7 @@
       const riff = suggestOctaveRiff(frets5);
 
       document.getElementById('resultado').textContent =
-        `🎼 Escala de ${root} ${mode}:\n${scale.join(' - ')}\n\n` +
+        `🎼 Escala de ${root} ${mode.replace('pentatonica_', 'pentatónica ')}:\n${scale.join(' - ')}\n\n` +
         `🎸 Trastes válidos en cuerda 5 (A): ${frets5.join(', ')}\n` +
         `🎸 Trastes válidos en cuerda 6 (E): ${frets6.join(', ')}\n\n` +
         `💡 Riff sugerido (octavas en cuerda 5): ${riff.join(', ')}`;
