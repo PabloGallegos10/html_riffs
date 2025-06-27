@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generador de Riffs en Octavas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    select, button {
+      font-size: 1rem;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      width: 100%;
+    }
+    .result {
+      background: #222;
+      padding: 1rem;
+      border-radius: 5px;
+      margin-top: 1rem;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎸 Generador de Riffs en Octavas</h1>
+  <label for="tonalidad">Elige una tonalidad:</label>
+  <select id="tonalidad">
+    <option>C</option><option>C#</option><option>D</option><option>D#</option>
+    <option>E</option><option>F</option><option>F#</option><option>G</option>
+    <option>G#</option><option>A</option><option>A#</option><option>B</option>
+  </select>
+
+  <label for="modo">Elige un modo:</label>
+  <select id="modo">
+    <option value="mayor">Mayor</option>
+    <option value="menor">Menor</option>
+    <option value="pentatonica">Pentatónica</option>
+  </select>
+
+  <button onclick="generar()">Generar Riff</button>
+
+  <div class="result" id="resultado"></div>
+
+  <script>
+    const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+    const intervals = {
+      mayor:       [2, 2, 1, 2, 2, 2, 1],
+      menor:       [2, 1, 2, 2, 1, 2, 2],
+      pentatonica: [2, 2, 3, 2, 3],
+    };
+
+    function buildScale(root, mode) {
+      let idx = chromatic.indexOf(root);
+      const pattern = intervals[mode];
+      const scale = [chromatic[idx % 12]];
+      for (let step of pattern) {
+        idx += step;
+        scale.push(chromatic[idx % 12]);
+      }
+      return scale;
+    }
+
+    function buildFretMap(openNote) {
+      const idx = chromatic.indexOf(openNote);
+      const frets = [];
+      for (let i = 0; i <= 21; i++) {
+        frets.push([i, chromatic[(idx + i) % 12]]);
+      }
+      return frets;
+    }
+
+    function getValidFrets(scale, openNote) {
+      const map = buildFretMap(openNote);
+      return map.filter(([fret, note]) => scale.includes(note)).map(([fret]) => fret);
+    }
+
+    function suggestOctaveRiff(validFrets) {
+      const range = validFrets.filter(f => f >= 5 && f <= 15);
+      return range.slice(0, 4);
+    }
+
+    function generar() {
+      const root = document.getElementById('tonalidad').value;
+      const mode = document.getElementById('modo').value;
+
+      const scale = buildScale(root, mode);
+      const frets5 = getValidFrets(scale, 'A');
+      const frets6 = getValidFrets(scale, 'E');
+      const riff = suggestOctaveRiff(frets5);
+
+      document.getElementById('resultado').textContent =
+        `🎼 Escala de ${root} ${mode}:\n${scale.join(' - ')}\n\n` +
+        `🎸 Trastes válidos en cuerda 5 (A): ${frets5.join(', ')}\n` +
+        `🎸 Trastes válidos en cuerda 6 (E): ${frets6.join(', ')}\n\n` +
+        `💡 Riff sugerido (octavas en cuerda 5): ${riff.join(', ')}`;
+    }
+  </script>
+</body>
+</html>
